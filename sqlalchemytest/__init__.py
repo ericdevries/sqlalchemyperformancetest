@@ -216,12 +216,33 @@ async def version5(sess, data):
         await session.commit()
 
 
+@timeit
+async def version6(sess, data):
+    """add all objects using execute()"""
+    async with sess() as session:
+        for args in itertools.batched(data, 10000):
+            await session.execute(
+                Request.__table__.insert(),
+                [
+                    {
+                        "subscription": 1,
+                        "range": SQLRange(d[0], d[1]),
+                        "issuerId": "test",
+                    }
+                    for d in args
+                ],
+            )
+
+        await session.commit()
+
+
 async def main():
     await version1()
     await version2()
     await version3()
     await version4()
     await version5()
+    await version6()
 
 
 if __name__ == "__main__":
