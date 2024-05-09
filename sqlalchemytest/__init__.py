@@ -6,6 +6,7 @@ import itertools
 import time
 from functools import wraps
 import threading
+from memory_profiler import profile
 
 import psutil
 
@@ -51,7 +52,7 @@ TEST_DATA = [
         datetime.now(tz=UTC),
         datetime.now(tz=UTC),
     )
-    for _ in range(2000000)
+    for _ in range(2000 * 1000)  # 2 million records is comparable to the production data size
 ]
 print("done generating data")
 
@@ -61,11 +62,11 @@ gc.disable()
 def timeit(func):
     process = psutil.Process()
     stopping = threading.Event()
-    memory = []
 
     prefix = func.__name__
 
     def get_memory():
+        memory = []
         starting_memory = process.memory_info().rss
 
         while not stopping.is_set():
@@ -76,15 +77,23 @@ def timeit(func):
         print(f"[{prefix}] min memory: {sizeof_fmt(min(normalized))}")
         print(f"[{prefix}] max memory: {sizeof_fmt(max(normalized))}")
 
+    # @profile
+    async def execute_method(func):
+        await func
+
     @wraps(func)
     async def with_benchmarks():
+        # try to collect garbage before starting
+        for _ in range(5):
+            gc.collect()
+            time.sleep(1)
+
         conn, sess = await get_connection()
         starting_time = time.time()
-        gc.collect()
-        time.sleep(3)
+
         thread = threading.Thread(target=get_memory)
         thread.start()
-        await func(sess, TEST_DATA)
+        await execute_method(func(sess, TEST_DATA))
         stopping.set()
         ending_time = time.time()
 
