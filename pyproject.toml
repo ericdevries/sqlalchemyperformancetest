@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "sqlalchemytest"
+version = "0.1.0"
+description = ""
+authors = ["Eric de Vries <817612+ericdevries@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+sqlalchemy = "^2.0.23"
+asyncpg = "^0.29.0"
+greenlet = "^3.0.3"
+psutil = "^5.9.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
